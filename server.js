@@ -32,36 +32,33 @@ var listener = app.listen(process.env.PORT, function () {
 });
 
 //my code below this line
-app.use("/api/timestamp/", function(req, res) {
-  let url = req.url.substring(1)
-
-  res.json(getUnixAndUTC(url))
-  
+app.get("/api/timestamp/", (req, res) => {
+  res.json({ unix: Date.now(), utc: Date() });
 });
 
-function getUnixAndUTC(url) {
-    var unixTimestamp;
-    if (url.includes('-')) {
-      unixTimestamp = Date.parse(url);
+app.use("/api/timestamp/:date", function(req, res) {
+    let date = req.params.date;
+    if (/\d{5,}/.test(date)) {
+      let unixNum = Number(date);
+      res.json({
+        "unix": unixNum,
+        "utc": new Date(unixNum).toUTCString()
+      })
     }
-    else if (url === "") {
-      unixTimestamp = Date.now();
-    }
-    else { 
-      unixTimestamp = Number(url);
-    }
-    
-    const milliseconds = unixTimestamp;
-    const dateObject = new Date(milliseconds)
-    const weekDay = dateObject.toLocaleString("en-US", {weekday: "short"})
-    const monthDay = dateObject.toLocaleString("en-US", {day: "numeric"})
-    const month = dateObject.toLocaleString("en-US", {month: "short"})
-    const year = dateObject.toLocaleString("en-US", {year: "numeric"})
-    const time = "00:00:00 GMT"
+    else {
+      let dateObj = new Date(date);
 
-    return {
-      "unix": unixTimestamp,
-      "utc": weekDay + ", " + monthDay + " " + month + " " + year + " " + time
+      if (dateObj.toString() == "Invalid Date") {
+        res.json({
+          error: "Invalid Date"
+        })
+      }
+      else {
+        res.json({
+          "unix": dateObj.valueOf(),
+          "utc": dateObj.toUTCString()
+        })
+      }
     }
-}
+  });
 
